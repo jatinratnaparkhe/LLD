@@ -1,6 +1,6 @@
 package notes.lld.pattern.behavioral.strategy;
 
-import notes.lld.pattern.behavioral.strategy.driving.DriveStrategy;
+import notes.lld.pattern.behavioral.strategy.strategies.DriveStrategy;
 
 import java.util.Objects;
 

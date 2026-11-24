@@ -1,4 +1,4 @@
-package notes.lld.pattern.behavioral.strategy.driving;
+package notes.lld.pattern.behavioral.strategy.strategies;
 
 public class SportDriveStrategy implements DriveStrategy {
     @Override

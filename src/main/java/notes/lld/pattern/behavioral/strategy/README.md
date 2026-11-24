@@ -1,96 +1,176 @@
 # Strategy Design Pattern
 
-> Behavioral Design Pattern | Java 21
+**Category:** Behavioral Design Pattern
 
 ## 1. Introduction
 
-The Strategy Design Pattern defines a family of algorithms or behaviors, encapsulates each one separately, and makes them interchangeable. It allows behavior to vary independently of the object that uses it.
+The Strategy Pattern defines a family of algorithms, encapsulates each one separately, and makes them interchangeable through a common interface.
+
+In simple terms, an object delegates a particular behavior to another object instead of implementing every possible variation itself.
+
+**Core idea:** Favor composition over inheritance for varying behavior.
 
 ## 2. Problem Statement
 
-Design a vehicle system in which different vehicles can use different driving behaviors, such as normal driving and sports driving. A vehicle should also be able to change its driving behavior at runtime without modifying its class.
+Consider a vehicle system with normal, sports and off-road vehicles. Sports and off-road vehicles may share the same specialized driving behavior.
 
-Using inheritance alone could lead to duplicated behavior across vehicle subclasses or an increasing number of subclasses for different behavior combinations.
+Without the Strategy Pattern, subclasses may override `drive()` with duplicate logic, or a central class may use growing conditional blocks to select behavior.
+
+This makes shared behavior harder to maintain and new variations harder to introduce.
 
 ## 3. Solution
 
-Define a common `DriveStrategy` interface and encapsulate each driving behavior in a separate implementation. The `Vehicle` class holds a reference to the interface and delegates driving to the selected strategy.
+- Extract varying driving behaviors into separate strategy classes.
+- Define a common `DriveStrategy` interface.
+- Let `Vehicle` hold a reference to a strategy and delegate `drive()` to it.
+- Supply the appropriate strategy when creating a vehicle.
 
-The client selects the initial strategy through the constructor and can replace it using `setStrategy()` at runtime.
+Different vehicles can reuse the same strategy without duplicating its implementation. New strategies can be introduced without modifying the existing context.
 
 ## 4. UML Class Diagram
 
-![Strategy Design Pattern UML](./class-diagram.svg)
-
-## 5. Participants
-
-| Component | Pattern role | Responsibility |
-| --- | --- | --- |
-| `DriveStrategy` | Strategy | Defines the common driving contract. |
-| `NormalDriveStrategy` | Concrete Strategy | Implements normal driving behavior. |
-| `SportDriveStrategy` | Concrete Strategy | Implements sports driving behavior. |
-| `Vehicle` | Context | Stores the selected strategy and delegates driving to it. |
-| `Main` | Client | Creates vehicles, selects strategies and demonstrates runtime switching. |
-
-## 6. Execution Flow
-
-1. Create a truck with `NormalDriveStrategy`.
-2. Create a racecar with `SportDriveStrategy`.
-3. Call `drive()` on both vehicles; each delegates to its current strategy.
-4. Change the racecar's strategy to `NormalDriveStrategy` using `setStrategy()`.
-5. Call `drive()` again to demonstrate that the same vehicle now behaves differently.
-
 ```mermaid
-sequenceDiagram
-    participant M as Main
-    participant V as Vehicle (racecar)
-    participant S as SportDriveStrategy
-    participant N as NormalDriveStrategy
-    M->>V: drive()
-    V->>S: drive()
-    S-->>V: return
-    V-->>M: return
-    M->>V: setStrategy(normalStrategy)
-    M->>V: drive()
-    V->>N: drive()
-    N-->>V: return
-    V-->>M: return
+classDiagram
+    direction TB
+    class DriveStrategy {
+        <<interface>>
+        +drive() void
+    }
+    class NormalDriveStrategy {
+        +drive() void
+    }
+    class SportDriveStrategy {
+        +drive() void
+    }
+    class Vehicle {
+        -DriveStrategy driveStrategy
+        +Vehicle(DriveStrategy driveStrategy)
+        +drive() void
+    }
+    DriveStrategy <|.. NormalDriveStrategy
+    DriveStrategy <|.. SportDriveStrategy
+    Vehicle --> DriveStrategy : delegates to
 ```
 
-## 7. Expected Output
+`Vehicle` has a strategy (HAS-A relationship). Concrete strategies implement the common interface. The context does not need to know how each strategy performs its operation.
+
+## 5. Key Components
+
+| Component | Responsibility | Example |
+|---|---|---|
+| Strategy | Defines the common behavior | `DriveStrategy` |
+| Concrete Strategy | Implements a specific behavior | `NormalDriveStrategy`, `SportDriveStrategy` |
+| Context | Holds a strategy and delegates execution | `Vehicle` |
+| Client | Selects and supplies a strategy | Calling code |
+
+## 6. Example Implementation
+
+A simplified Java example using constructor injection:
+
+```java
+interface DriveStrategy {
+    void drive();
+}
+
+class NormalDriveStrategy implements DriveStrategy {
+    public void drive() {
+        System.out.println("Normal Driving");
+    }
+}
+
+class SportDriveStrategy implements DriveStrategy {
+    public void drive() {
+        System.out.println("Sports Driving");
+    }
+}
+
+class Vehicle {
+    private final DriveStrategy driveStrategy;
+
+    Vehicle(DriveStrategy driveStrategy) {
+        this.driveStrategy = driveStrategy;
+    }
+
+    void drive() {
+        driveStrategy.drive();
+    }
+}
+```
+
+**Example behavior:**
+
+```java
+new Vehicle(new NormalDriveStrategy()).drive();
+new Vehicle(new SportDriveStrategy()).drive();
+```
+
+**Expected output:**
 
 ```text
-Truck starts: Normal Driving
-Racecar starts: Sports Driving
-Racecar used as a passenger car:
-Racecar(normal mode) starts: Normal Driving
+Normal Driving
+Sports Driving
 ```
 
-Run `Main.java` from IntelliJ IDEA to execute the demonstration.
+Strategies can be selected at runtime through constructor injection. If an existing context must change its strategy after construction, a setter or another replacement mechanism can be provided.
 
-## 8. Design Principles Applied
+## 7. SOLID Principles
 
-- **Open/Closed Principle:** New driving behaviors can be added by implementing `DriveStrategy` without modifying `Vehicle`.
-- **Dependency Inversion Principle:** The context depends on an abstraction instead of concrete driving implementations.
-- **Single Responsibility Principle:** Each strategy encapsulates its own driving behavior, while the context delegates to the selected strategy.
-- **Composition over inheritance:** Behavior is supplied through an object reference rather than vehicle subclass hierarchies.
-- **Dependency injection:** The strategy is supplied through constructor and setter injection.
+| Principle | How it applies |
+|---|---|
+| SRP | Each strategy encapsulates a particular algorithm. |
+| OCP | New strategies can be added without modifying the context. |
+| LSP | Strategies are interchangeable when they honor the same contract. |
+| ISP | A focused strategy interface avoids unrelated operations. |
+| DIP | The context depends on an abstraction rather than concrete strategies. |
 
-## 9. Advantages and Limitations
+**Most relevant:** OCP and DIP.
 
-| Advantages | Limitations |
-| --- | --- |
-| Supports runtime behavior switching. | Introduces additional classes or strategy objects. |
-| Reduces duplication of driving behavior. | The client must know which strategy to select. |
-| Makes strategies independently testable. | May be unnecessary for a single, fixed behavior. |
-| Supports extension without modifying the context. | Mutable strategy selection requires care in concurrent environments. |
+## 8. Advantages and Disadvantages
 
-The current example assumes non-null strategies and single-threaded execution. Null validation can be added using `Objects.requireNonNull()` if needed.
+| Advantages | Disadvantages |
+|---|---|
+| Reuses behavior across different objects | May introduce additional classes |
+| Reduces algorithm-specific conditional logic | Client must know which strategy to select |
+| Supports flexible behavior selection | Can be overengineering for simple, stable behavior |
+| Allows strategies to be tested independently | May require additional context or parameters |
 
-## 10. When to Use
+## 9. When to Use
 
-Use Strategy when multiple interchangeable implementations of a behavior are needed, especially when the behavior must be selected or changed at runtime. Common examples include payment methods, sorting algorithms, pricing rules and route selection.
+Use the Strategy Pattern when multiple interchangeable algorithms perform the same general operation, behavior varies across objects, or algorithm-selection logic becomes difficult to maintain.
 
-## 11. Interview Takeaway
+Common applications:
 
-Strategy separates **what an object does** from **how it does it**. The context delegates behavior to an interchangeable strategy instead of implementing every possible behavior itself.
+- Payment processing: UPI, card, net banking.
+- Discount calculation: seasonal, membership, promotional discounts.
+- Navigation: fastest, shortest or economical routes.
+- Sorting: interchangeable comparison strategies.
+
+Avoid introducing the pattern when a simple, stable implementation is sufficient.
+
+## 10. Interview Questions
+
+**Q1. Why prefer composition over inheritance here?**  
+Composition allows unrelated objects to reuse behavior independently of their inheritance hierarchy.
+
+**Q2. Strategy vs Factory Pattern?**  
+Strategy determines how an operation is performed. Factory determines which object is created. A factory can also select a strategy.
+
+**Q3. Does Strategy eliminate all conditional statements?**  
+No. Selection logic may still exist, but individual algorithms are separated from that logic and from the context.
+
+**Q4. Is a setter mandatory for Strategy Pattern?**  
+No. Constructor injection is sufficient for selecting a strategy. A setter is useful only if an existing context needs to switch strategies.
+
+**Q5. Can strategies be implemented using Java lambdas?**  
+Yes, when the strategy interface is a functional interface.
+
+## 11. Quick Revision
+
+- **Pattern type:** Behavioral.
+- **Problem:** Duplicate or tightly coupled varying behavior.
+- **Solution:** Encapsulate interchangeable algorithms behind a common interface.
+- **Relationship:** Context HAS-A Strategy.
+- **Execution:** Client selects strategy; context delegates execution.
+- **Key principles:** Composition over inheritance, OCP and DIP.
+
+> Strategy Pattern allows an algorithm to vary independently of the clients that use it.

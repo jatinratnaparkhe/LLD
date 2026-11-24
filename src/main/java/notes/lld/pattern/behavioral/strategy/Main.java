@@ -1,7 +1,7 @@
 package notes.lld.pattern.behavioral.strategy;
 
-import notes.lld.pattern.behavioral.strategy.driving.NormalDriveStrategy;
-import notes.lld.pattern.behavioral.strategy.driving.SportDriveStrategy;
+import notes.lld.pattern.behavioral.strategy.strategies.NormalDriveStrategy;
+import notes.lld.pattern.behavioral.strategy.strategies.SportDriveStrategy;
 
 public class Main {
     public static void main(String[] args) {
